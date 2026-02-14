@@ -12,8 +12,9 @@ export default function SplitSlot({ side, onClick, onDrop }: Props) {
   return (
     <div
       className="
-        mx-1 flex items-center justify-center
+        flex items-center justify-center
         pointer-events-auto
+        z-10
       "
       onClick={onClick}
       onDragOver={(e) => e.preventDefault()}
@@ -24,22 +25,24 @@ export default function SplitSlot({ side, onClick, onDrop }: Props) {
         onDrop?.(tileId)
         window._draggedTileId = null
       }}
-      title={`Dividir para o ${side === "left" ? "esquerdo" : "direito"}`}
+      title={`Dividir para ${side === "left" ? "a esquerda" : "a direita"}`}
     >
       <div
         className="
           w-6 h-6
           rounded-full
-          bg-green-600
+          bg-green-600/90
           hover:bg-green-500
+          hover:scale-110
           text-white
           flex items-center justify-center
-          shadow-md
-          transition
+          shadow-lg
+          border-2 border-white/30
+          transition-all duration-200
           cursor-pointer
         "
       >
-        <Scissors size={14} />
+        <Scissors size={14} className="rotate-90" />
       </div>
     </div>
   )

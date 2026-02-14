@@ -12,10 +12,8 @@ export function GameSocketProvider({
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws"
-    const host = window.location.host
-    const wsUrl = `${protocol}://${host}/ws`
-
+    const wsUrl = import.meta.env.VITE_MODE === "production" ? import.meta.env.VITE_WS_URL : `${window.location.protocol === "https:" ? "wss" : "ws"}://localhost:8080/ws`
+      
     console.log("Connecting to WebSocket...", wsUrl)
     const ws = new WebSocket(wsUrl)
 

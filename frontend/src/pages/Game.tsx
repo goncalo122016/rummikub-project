@@ -8,11 +8,15 @@ import JoinPage from "./JoinPage"
 import WaitingPage from "./WaitingPage"
 import LoadingPage from "./LoadingPage"
 import CreateGamePage from "./CreateGamePage"
+import StarfieldBackground from "../components/StarfieldBackground"
 import Pile from "../components/Pile"
 import PlayersBar from "../components/PlayersBar"
 import { useSplitDraft } from "../hooks/useSplitDraft"
 import logo from "../assets/rummi-logo.png"
 import toast from "react-hot-toast"
+import { motion } from "framer-motion"
+import { colorFromName } from "../utils/playerColor"
+import { LogOut, RefreshCw } from "lucide-react"
 
 export default function Game() {
   type GameStatus = "loading" | "join" | "create" | "waiting" | "playing"
@@ -30,8 +34,6 @@ export default function Game() {
 
   const { send, ready } = useGameSocketContext()
   const split = useSplitDraft()
-
-  const InGame = players.some((p : any) => p.name === playerName)
 
   useEffect(() => {
     if (!split.canConfirm) return
@@ -51,10 +53,6 @@ export default function Game() {
 
   useEffect(() => {
     if (!ready) return
-    if (!InGame) {
-      setStatus("join")
-      return
-    }
 
     if (!playerName) {
       setStatus("join")
@@ -89,7 +87,7 @@ export default function Game() {
           })
           break
 
-        case "sync":
+        case "sync_state":
           setHand(msg.data.me.tiles)
           setBoard(msg.data.table)
           setCurrentTurn(msg.data.current_turn)
@@ -269,47 +267,109 @@ export default function Game() {
           .filter((t): t is Tile => t !== undefined)
 
   return (
-    <div className="h-screen bg-green-800 flex flex-col">
+    <div className="h-screen bg-linear-to-br from-green-900 via-green-800 to-green-900 flex flex-col relative overflow-hidden">
+      <StarfieldBackground />
 
-      <div className="sticky top-0 z-20 bg-green-800 p-4 flex justify-between items-center">
-        <div className="flex items-center">
-          <img src={logo} alt="Rummikub Logo" className="h-12 w-12 mx-2" />
-          <h1 className="text-3xl font-bold text-white ml-3">Rummikub</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            className="bg-white hover:bg-red-100 text-red-600  py-2 px-4 rounded"
-            onClick={() => {
-              send("leave")
-              cleanupAndLeave()
-            }}
-          >
-            Sair do Jogo
-          </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded"
-            onClick={() => {
-              send("reset")
-              cleanupAndLeave()
-            }}
-          >
-            Novo Jogo
-          </button>
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-green-800/95 backdrop-blur-sm shadow-lg border-b border-green-700/30">
+        <div className="p-3 md:p-4 flex flex-row justify-between items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <img 
+              src={logo} 
+              alt="Rummikub" 
+              className="h-8 w-8 md:h-12 md:w-12" 
+            />
+            <h1 className="text-xl md:text-3xl font-bold text-white">
+              Rummikub
+            </h1>
+          </div>
+
+          {/* PlayersBar - integrada no header em desktop apenas */}
+          <div className="hidden md:block flex-1 max-w-2xl">
+            <div className="flex justify-center gap-2 md:gap-3 flex-wrap">
+              {players.map(player => {
+                const isTurn = player === currentTurn
+                const isMe = player === playerName
+                const baseColor = colorFromName(player)
+
+                return (
+                  <motion.div
+                    key={player}
+                    animate={isTurn ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ repeat: isTurn ? Infinity : 0, duration: 1.5, ease: "easeInOut" }}
+                    className={`
+                      relative
+                      px-3 md:px-4 py-1.5 md:py-2 
+                      rounded-full 
+                      text-xs md:text-sm font-semibold text-white
+                      ${baseColor}
+                      ring-2 md:ring-4 ring-offset-1 md:ring-offset-2 ring-offset-green-800
+                      ${isTurn ? "ring-yellow-400/80 shadow-lg shadow-yellow-400/20" : "ring-transparent shadow-md"}
+                      ${isMe ? "border-2 border-white/90" : ""}
+                      transition-all duration-200
+                    `}
+                  >
+                    <span className="relative z-10">
+                      {player}
+                      {isMe && <span className="ml-1 text-[10px] md:text-xs opacity-90">(tu)</span>}
+                    </span>
+                    
+                    {isTurn && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full bg-yellow-400/20"
+                        animate={{ opacity: [0, 0.4, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                      />
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              className="bg-white hover:bg-red-50 text-red-600 p-2 md:py-2 md:px-4 rounded flex items-center gap-2 transition-colors cursor-pointer"
+              onClick={() => {
+                send("leave")
+                cleanupAndLeave()
+              }}
+              title="Sair do Jogo"
+            >
+              <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden md:inline text-sm font-medium">Sair do Jogo</span>
+            </button>
+
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white p-2 md:py-2 md:px-4 rounded flex items-center gap-2 transition-colors cursor-pointer"
+              onClick={() => {
+                send("reset")
+                cleanupAndLeave()
+              }}
+              title="Novo Jogo"
+            >
+              <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+              <span className="hidden md:inline text-sm font-medium">Novo Jogo</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <PlayersBar
-        players={players}
-        currentTurn={currentTurn}
-        me={playerName}
-      />
+      {/* PlayersBar - MOBILE apenas (depois do header) */}
+      <div className="md:hidden relative z-10">
+        <PlayersBar
+          players={players}
+          currentTurn={currentTurn}
+          me={playerName}
+        />
+      </div>
 
-      <div className="flex-1 overflow-y-auto px-6">
+      <div className="flex-1 overflow-y-auto px-6 relative z-10">
         <Board
           combinations={displayBoard}
           onDropTile={(tileId, targetTiles, side) => {
             if (split.draft) {
-              if (!side) return // ignora drops fora do split
+              if (!side) return
               split.addTiles(side, [tileId])
               return
             }
@@ -325,7 +385,7 @@ export default function Game() {
         />
       </div>
 
-      <div className="sticky bottom-0 z-20 bg-green-800 p-4">
+      <div className="sticky bottom-0 z-20 p-4">
         <div className="flex items-center gap-6">
           
           <div className="hidden md:flex">

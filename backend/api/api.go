@@ -57,7 +57,7 @@ func (c *Client) GetCurrentGameState(game GameI) ServerMessage {
 	}
 
 	return ServerMessage{
-		Type: "sync",
+		Type: "sync_state",
 		Data: payload,
 	}
 }
